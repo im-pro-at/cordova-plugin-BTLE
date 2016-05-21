@@ -13,6 +13,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothProfile;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +46,7 @@ public class BluetoothStatus extends CordovaPlugin {
     private String pin="";
     
     BluetoothSocket socked=null;
+    BluetoothGatt sgatt; 
     OutputStream o;
     InputStream i;
         
@@ -105,6 +114,26 @@ public class BluetoothStatus extends CordovaPlugin {
                 device.createBond();
                 callbackContext.success();
               }
+              if(args.getString(0).equals("BLconnect"))
+              {
+                if(sgatt!=null)
+                {
+                  sgatt.disconnect();
+                  sgatt.close();
+                  sgatt=null;
+                }
+                sgatt = device.connectGatt(this, false, mGattCallback);
+              }
+              if(args.getString(0).equals("BLconnect"))
+              {
+                if(sgatt!=null)
+                {
+                  sgatt.discoverServices();                                      // Attempt to discover services after successful connection.
+                }
+              }
+              
+//                              findMldpGattService(mBluetoothGatt.getServices());                      //Get the list of services and call method to look for MLDP service
+
               if(args.getString(0).equals("connect"))
               {
                 if(socked!=null)
@@ -305,14 +334,14 @@ public class BluetoothStatus extends CordovaPlugin {
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
-                        Log.e(LOG_TAG, "Bluetooth was disabled");
+                        log(LOG_TAG, "Bluetooth was disabled");
 
                         sendJS("javascript:cordova.plugins.BluetoothStatus.BTenabled = false;");
                         sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('BluetoothStatus.disabled');");
 
                         break;
                     case BluetoothAdapter.STATE_ON:
-                        Log.e(LOG_TAG, "Bluetooth was enabled");
+                        log(LOG_TAG, "Bluetooth was enabled");
 
                         sendJS("javascript:cordova.plugins.BluetoothStatus.BTenabled = true;");
                         sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('BluetoothStatus.enabled');");
@@ -370,5 +399,49 @@ public class BluetoothStatus extends CordovaPlugin {
             
         }
     };
+    
+    private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) { //Change in connection state
+            if (newState == BluetoothProfile.STATE_CONNECTED) {                         //See if we are connected
+                log("BluetoothProfile.STATE_CONNECTED Connected to GATT server.");
+            } 
+            else if (newState == BluetoothProfile.STATE_DISCONNECTED) {                 //See if we are not connected
+                log("BluetoothProfile.STATE_DISCONNECTED Connected to GATT server.");
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {              //Service discovery complete
+            if (status == BluetoothGatt.GATT_SUCCESS && sgatt != null) {       //See if the service discovery was successful
+                log("BluetoothGatt.GATT_SUCCESS Connected to GATT server.");
+            } 
+            else {                                                                      //Service discovery was not successful
+                log("BluetoothGatt.GATT_SUCCESS onServicesDiscovered received: " + status);
+            }
+        }
+
+        //For information only. This application uses Indication to receive updated characteristic data, not Read
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) { //A request to Read has completed
+            log("onCharacteristicRead "+status+" "+characteristic);                                                   //Record that the write has completed
+            if (status == BluetoothGatt.GATT_SUCCESS) {                                 //See if the read was successful
+              log("onCharacteristicRead =>  "+characteristic.getStringValue(0));
+            }
+        }
+
+        //For information only. This application sends small packets infrequently and does not need to know what the previous write completed
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) { //A request to Write has completed
+            log("onCharacteristicWrite "+status+" "+characteristic);                                                   //Record that the write has completed
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) { //Indication or notification was received
+            log("onCharacteristicChanged "+characteristic);                                                   //Record that the write has completed
+            log("onCharacteristicChanged =>  "+characteristic.getStringValue(0));
+        }
+    };
+
         
 }
