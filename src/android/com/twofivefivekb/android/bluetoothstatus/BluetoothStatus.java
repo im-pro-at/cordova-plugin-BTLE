@@ -126,7 +126,7 @@ public class BluetoothStatus extends CordovaPlugin {
                 BluetoothDevice device= bluetoothAdapter.getRemoteDevice(args.getString(1));
                 sgatt = device.connectGatt(this.cordova.getActivity().getApplicationContext(), false, mGattCallback);
               }
-              if(args.getString(0).equals("BLconnect"))
+              if(args.getString(0).equals("BLdiscoverServices"))
               {
                 if(sgatt!=null)
                 {
