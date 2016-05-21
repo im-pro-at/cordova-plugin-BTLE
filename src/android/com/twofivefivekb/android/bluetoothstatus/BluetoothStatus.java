@@ -116,7 +116,6 @@ public class BluetoothStatus extends CordovaPlugin {
               }
               if(args.getString(0).equals("BLconnect"))
               {
-                log(args.getString(0));
                 if(sgatt!=null)
                 {
                   sgatt.disconnect();
@@ -407,6 +406,7 @@ public class BluetoothStatus extends CordovaPlugin {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) { //Change in connection state
+            log("onConnectionStateChange("+gatt+","+status+","+newState+")");
             if (newState == BluetoothProfile.STATE_CONNECTED) {                         //See if we are connected
                 log("BluetoothProfile.STATE_CONNECTED Connected to GATT server.");
             } 
@@ -417,6 +417,7 @@ public class BluetoothStatus extends CordovaPlugin {
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {              //Service discovery complete
+            log("onServicesDiscovered("+gatt+","+status+")");
             if (status == BluetoothGatt.GATT_SUCCESS && sgatt != null) {       //See if the service discovery was successful
                 log("BluetoothGatt.GATT_SUCCESS Connected to GATT server.");
             } 
@@ -428,7 +429,7 @@ public class BluetoothStatus extends CordovaPlugin {
         //For information only. This application uses Indication to receive updated characteristic data, not Read
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) { //A request to Read has completed
-            log("onCharacteristicRead "+status+" "+characteristic);                                                   //Record that the write has completed
+            log("onCharacteristicRead("+gatt+","+status+","+characteristic+","+status+")");                                                   //Record that the write has completed
             if (status == BluetoothGatt.GATT_SUCCESS) {                                 //See if the read was successful
               log("onCharacteristicRead =>  "+characteristic.getStringValue(0));
             }
@@ -437,12 +438,12 @@ public class BluetoothStatus extends CordovaPlugin {
         //For information only. This application sends small packets infrequently and does not need to know what the previous write completed
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) { //A request to Write has completed
-            log("onCharacteristicWrite "+status+" "+characteristic);                                                   //Record that the write has completed
+            log("onCharacteristicWrite("+gatt+","+characteristic+","+status+")");                                                   //Record that the write has completed
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) { //Indication or notification was received
-            log("onCharacteristicChanged "+characteristic);                                                   //Record that the write has completed
+            log("onCharacteristicWrite("+gatt+","+characteristic+")");                                                   //Record that the write has completed
             log("onCharacteristicChanged =>  "+characteristic.getStringValue(0));
         }
     };
