@@ -116,6 +116,7 @@ public class BluetoothStatus extends CordovaPlugin {
               }
               if(args.getString(0).equals("BLconnect"))
               {
+                log(args.getString(0));
                 if(sgatt!=null)
                 {
                   sgatt.disconnect();
@@ -128,6 +129,7 @@ public class BluetoothStatus extends CordovaPlugin {
               }
               if(args.getString(0).equals("BLdiscoverServices"))
               {
+                log(args.getString(0));
                 if(sgatt!=null)
                 {
                   sgatt.discoverServices();                                      // Attempt to discover services after successful connection.
