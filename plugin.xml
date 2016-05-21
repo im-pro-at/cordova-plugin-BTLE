@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+    <plugin id="cordova-plugin-bluetooth-hack" version="1.0.3" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <engines>
+        <engine name="cordova" version="&gt;=3.0.0" />
+    </engines>
+
+    <name>Bluetooth hack</name>
+    <description>Cordova Bluetooth hack plugin</description>
+    <keywords>cordova,bluetooth</keywords>
+    <license>MIT</license>
+    <author>Guillaume Monnet edited Patrick Knoebel</author>
+
+    <js-module name="BluetoothStatus" src="BluetoothStatus.js">
+        <clobbers target="cordova.plugins.BluetoothStatus" />
+    </js-module>
+
+    <platform name="android">
+        <source-file src="src/android/com/twofivefivekb/android/bluetoothstatus/BluetoothStatus.java" target-dir="src/com/twofivefivekb/android/bluetoothstatus" />
+
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="BluetoothStatus">
+                <param name="android-package" value="com.twofivefivekb.android.bluetoothstatus.BluetoothStatus" />
+            </feature>
+        </config-file>
+
+        <config-file parent="/*" target="AndroidManifest.xml">
+            <uses-permission android:name="android.permission.BLUETOOTH" />
+            <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+            <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+        </config-file>
+
+    </platform>
+</plugin>
