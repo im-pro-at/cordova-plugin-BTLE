@@ -590,7 +590,7 @@ public class BluetoothStatus extends CordovaPlugin {
         
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status){
-            log("onCharacteristicWrite("+gatt+","+mtu+","+status+")");                                                   //Record that the write has completed
+            log("onMtuChanged("+gatt+","+mtu+","+status+")");                                                   //Record that the write has completed
         }
     };
         
