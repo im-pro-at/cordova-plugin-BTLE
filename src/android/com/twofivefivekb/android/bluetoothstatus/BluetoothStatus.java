@@ -47,9 +47,16 @@ public class BluetoothStatus extends CordovaPlugin {
     private String pin="";
     
     BluetoothSocket socked=null;
-    BluetoothGatt sgatt; 
     OutputStream o;
     InputStream i;
+    
+    BluetoothGatt sgatt; 
+    BluetoothGattCharacteristic mDataMDLP;                        //The BLE characteristic used for MLDP data transfers
+    static final String MLDP_PRIVATE_SERVICE = "00035b03-58e6-07dd-021a-08123a000300"; //Private service for Microchip MLDP
+    static final String MLDP_DATA_PRIVATE_CHAR = "00035b03-58e6-07dd-021a-08123a000301"; //Characteristic for MLDP Data, properties - notify, write
+    static final String MLDP_CONTROL_PRIVATE_CHAR = "00035b03-58e6-07dd-021a-08123a0003ff"; //Characteristic for MLDP Control, properties - read, write
+    static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";	//Special UUID for descriptor needed to enable notifications
+
         
     @Override
     public boolean execute(final String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException {
@@ -122,6 +129,7 @@ public class BluetoothStatus extends CordovaPlugin {
                   sgatt.disconnect();
                   sgatt.close();
                   sgatt=null;
+                  mDataMDLP=null;
                 }
                 log(args.getString(0));
                 BluetoothDevice device= bluetoothAdapter.getRemoteDevice(args.getString(1));
@@ -145,16 +153,54 @@ public class BluetoothStatus extends CordovaPlugin {
                       log("BLgetServices found no Services");
                       return false;
                   }
-                  String uuid;                                                                    //String to compare received UUID with desired known UUIDs
-
-                  for (BluetoothGattService gattService : gattServices) {                         //Test each service in the list of services
-                      uuid = gattService.getUuid().toString();                                    //Get the string version of the service's UUID
-                      log("UUID="+uuid);
-                      List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics(); //If so then get the service's list of characteristics
-                      for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) { //Test each characteristic in the list of characteristics
-                          uuid = gattCharacteristic.getUuid().toString();                     //Get the string version of the characteristic's UUID
-                          log(" -> UUID="+uuid);
-                      }
+                  try
+                  {
+                    String uuid;                                                                    //String to compare received UUID with desired known UUIDs
+                    for (BluetoothGattService gattService : gattServices) {                         //Test each service in the list of services
+                        uuid = gattService.getUuid().toString();                                    //Get the string version of the service's UUID
+                        if (uuid.equals(MLDP_PRIVATE_SERVICE)) {                                    //See if it matches the UUID of the MLDP service 
+                            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics(); //If so then get the service's list of characteristics
+                            for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) { //Test each characteristic in the list of characteristics
+                                uuid = gattCharacteristic.getUuid().toString();                     //Get the string version of the characteristic's UUID
+                                if (uuid.equals(MLDP_DATA_PRIVATE_CHAR)) {                          //See if it matches the UUID of the MLDP data characteristic
+                                    mDataMDLP = gattCharacteristic;                                 //If so then save the reference to the characteristic 
+                                    log("Found MLDP data characteristics");
+                                } 
+                                final int characteristicProperties = gattCharacteristic.getProperties(); //Get the properties of the characteristic
+                                if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_NOTIFY)) > 0) { //See if the characteristic has the Notify property
+                                    sgatt.setCharacteristicNotification(gattCharacteristic, true); //If so then enable notification in the BluetoothGatt
+                                    BluetoothGattDescriptor descriptor = gattCharacteristic.getDescriptor(UUID.fromString(CHARACTERISTIC_NOTIFICATION_CONFIG)); //Get the descripter that enables notification on the server
+                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE); //Set the value of the descriptor to enable notification
+                                    sgatt.writeDescriptor(descriptor);                     //Write the descriptor
+                                }
+                                if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_INDICATE)) > 0) { //See if the characteristic has the Indicate property
+                                    sgatt.setCharacteristicNotification(gattCharacteristic, true); //If so then enable notification (and indication) in the BluetoothGatt
+                                    BluetoothGattDescriptor descriptor = gattCharacteristic.getDescriptor(UUID.fromString(CHARACTERISTIC_NOTIFICATION_CONFIG)); //Get the descripter that enables indication on the server
+                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE); //Set the value of the descriptor to enable indication
+                                    sgatt.writeDescriptor(descriptor);                     //Write the descriptor
+                                }
+                                if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE)) > 0) { //See if the characteristic has the Write (acknowledged) property
+                                    gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT); //If so then set the write type (write with acknowledge) in the BluetoothGatt
+                                }
+                                if ((characteristicProperties & (BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) { //See if the characteristic has the Write (unacknowledged) property
+                                    gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE); //If so then set the write type (write with no acknowledge) in the BluetoothGatt
+                                }
+                            }
+                            break;                                                                  //Found the MLDP service and are not looking for any other services
+                        }
+                    }
+                    if (mDataMDLP == null) {                                                        //See if the MLDP data characteristic was not found
+                      log("findMldpGattService found no MLDP service");
+                      callbackContext.error();
+                    }
+                    else{
+                      callbackContext.success();
+                    }
+                  }
+                  catch(Exception e)
+                  {
+                    callbackContext.error(e.toString());
+                    log(e.toString());
                   }
                 }
               }
@@ -166,6 +212,7 @@ public class BluetoothStatus extends CordovaPlugin {
                 {
                   sgatt.disconnect();
                   sgatt.close();
+                  mDataMDLP=null;
                   sgatt=null;
                 }
                 callbackContext.success();
