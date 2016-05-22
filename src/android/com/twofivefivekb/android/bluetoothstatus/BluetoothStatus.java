@@ -135,6 +135,14 @@ public class BluetoothStatus extends CordovaPlugin {
                 BluetoothDevice device= bluetoothAdapter.getRemoteDevice(args.getString(1));
                 sgatt = device.connectGatt(this.cordova.getActivity().getApplicationContext(), false, mGattCallback);
               }
+              if(args.getString(0).equals("BLrequestMtu"))
+              {
+                log(args.getString(0)+" "+Integer.parseInt(args.getString(1)));
+                if(sgatt!=null)
+                {
+                  sgatt.requestMtu(Integer.parseInt(args.getString(1)));                                      // Attempt to discover services after successful connection.
+                }
+              }
               if(args.getString(0).equals("BLdiscoverServices"))
               {
                 log(args.getString(0));
@@ -204,6 +212,55 @@ public class BluetoothStatus extends CordovaPlugin {
                   }
                 }
               }
+                
+                
+              if(args.getString(0).equals("BLsend"))
+              {
+                log(args.getString(0));
+                if(mDataMDLP!=null)
+                {
+                  new Thread(new Runnable() {
+                    public void run() {
+                      try
+                      {
+                        log(args.getString(0));
+
+                        mDataMDLP.setValue(args.getString(1));                     //Set value of MLDP characteristic to send die roll information
+
+                        if (mBluetoothGatt.writeCharacteristic(mDataMDLP)) {                       //Request the BluetoothGatt to do the Write
+                          callbackContext.success();
+                        } 
+                        else {
+                          callbackContext.error("writeCharacteristic failed");
+                          log("writeCharacteristic failed");
+                        }
+
+                      }
+                      catch(Exception e)
+                      {
+                        callbackContext.error(e.toString());
+                        log(e.toString());
+                      }
+                    }
+                  }).start();
+                  
+                }
+                else
+                {
+                  log("Not Open!");
+                  callbackContext.error("Note open!");
+                }
+                
+              }
+                
+              if(args.getString(0).equals("BLreceive"))
+              {
+
+              }
+  
+                
+                
+                
                 
               if(args.getString(0).equals("BLclose"))
               {
@@ -529,6 +586,11 @@ public class BluetoothStatus extends CordovaPlugin {
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) { //Indication or notification was received
             log("onCharacteristicWrite("+gatt+","+characteristic+")");                                                   //Record that the write has completed
             log("onCharacteristicChanged =>  "+characteristic.getStringValue(0));
+        }
+        
+        @Override
+        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status){
+            log("onCharacteristicWrite("+gatt+","+mtu+","+status+")");                                                   //Record that the write has completed
         }
     };
         
