@@ -150,11 +150,26 @@ public class BluetoothStatus extends CordovaPlugin {
                   for (BluetoothGattService gattService : gattServices) {                         //Test each service in the list of services
                       uuid = gattService.getUuid().toString();                                    //Get the string version of the service's UUID
                       log("UUID="+uuid);
+                      List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics(); //If so then get the service's list of characteristics
+                      for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) { //Test each characteristic in the list of characteristics
+                          uuid = gattCharacteristic.getUuid().toString();                     //Get the string version of the characteristic's UUID
+                          log(" -> UUID="+uuid);
+                      }
                   }
                 }
               }
                 
-              
+              if(args.getString(0).equals("BLclose"))
+              {
+                log(args.getString(0));
+                if(sgatt!=null)
+                {
+                  sgatt.disconnect();
+                  sgatt.close();
+                  sgatt=null;
+                }
+                callbackContext.success();
+              }
               
               
               
