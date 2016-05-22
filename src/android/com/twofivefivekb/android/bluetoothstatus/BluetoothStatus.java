@@ -191,7 +191,7 @@ public class BluetoothStatus extends CordovaPlugin {
                     }
                     if (mDataMDLP == null) {                                                        //See if the MLDP data characteristic was not found
                       log("findMldpGattService found no MLDP service");
-                      callbackContext.error();
+                      callbackContext.error("mDataMDLP not found!");
                     }
                     else{
                       callbackContext.success();
