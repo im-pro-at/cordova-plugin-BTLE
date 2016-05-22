@@ -227,7 +227,7 @@ public class BluetoothStatus extends CordovaPlugin {
 
                         mDataMDLP.setValue(args.getString(1));                     //Set value of MLDP characteristic to send die roll information
 
-                        if (mBluetoothGatt.writeCharacteristic(mDataMDLP)) {                       //Request the BluetoothGatt to do the Write
+                        if (sgatt.writeCharacteristic(mDataMDLP)) {                       //Request the BluetoothGatt to do the Write
                           callbackContext.success();
                         } 
                         else {
