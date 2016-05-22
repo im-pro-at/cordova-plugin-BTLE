@@ -134,8 +134,29 @@ public class BluetoothStatus extends CordovaPlugin {
                   sgatt.discoverServices();                                      // Attempt to discover services after successful connection.
                 }
               }
+              if(args.getString(0).equals("BLgetServices"))
+              {
+                log(args.getString(0));
+                if(sgatt!=null)
+                {
+                  List<BluetoothGattService> gattServices=sgatt.getServices();
+                  if (gattServices == null) {                                                     //Verify that list of GATT services is valid
+                      log("BLgetServices found no Services");
+                      return false;
+                  }
+                  String uuid;                                                                    //String to compare received UUID with desired known UUIDs
+
+                  for (BluetoothGattService gattService : gattServices) {                         //Test each service in the list of services
+                      uuid = gattService.getUuid().toString();                                    //Get the string version of the service's UUID
+                      log("UUID="+uuid);
+                  }
+                }
+              }
+                
               
-//                              findMldpGattService(mBluetoothGatt.getServices());                      //Get the list of services and call method to look for MLDP service
+              
+              
+              
 
               if(args.getString(0).equals("connect"))
               {
@@ -447,6 +468,5 @@ public class BluetoothStatus extends CordovaPlugin {
             log("onCharacteristicChanged =>  "+characteristic.getStringValue(0));
         }
     };
-
         
 }
