@@ -378,6 +378,18 @@ public class BluetoothStatus extends CordovaPlugin {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if(socked!=null)
+        {
+          socked.close();
+          socked=null;
+        }
+        if(sgatt!=null)
+        {
+          sgatt.disconnect();
+          sgatt.close();
+          mDataMDLP=null;
+          sgatt=null;
+        }
 
         mcordova.getActivity().unregisterReceiver(mReceiver);
     }
@@ -463,9 +475,9 @@ public class BluetoothStatus extends CordovaPlugin {
             }
         });
     }
-
+    
     private void log(final String log) {
-        sendJS("javascript:console.log('"+log+"');");
+        sendJS("javascript:console.log('BTPLUGIN>"+log+"');");
     }
 
     //broadcast receiver for BT intent changes
@@ -550,9 +562,11 @@ public class BluetoothStatus extends CordovaPlugin {
             log("onConnectionStateChange("+gatt+","+status+","+newState+")");
             if (newState == BluetoothProfile.STATE_CONNECTED) {                         //See if we are connected
                 log("BluetoothProfile.STATE_CONNECTED Connected to GATT server.");
+                sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.connected');");
             } 
             else if (newState == BluetoothProfile.STATE_DISCONNECTED) {                 //See if we are not connected
                 log("BluetoothProfile.STATE_DISCONNECTED Connected to GATT server.");
+                sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.disconnected');");
             }
         }
 
@@ -561,9 +575,11 @@ public class BluetoothStatus extends CordovaPlugin {
             log("onServicesDiscovered("+gatt+","+status+")");
             if (status == BluetoothGatt.GATT_SUCCESS && sgatt != null) {       //See if the service discovery was successful
                 log("BluetoothGatt.GATT_SUCCESS Connected to GATT server.");
+                sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.discovered');");
             } 
             else {                                                                      //Service discovery was not successful
                 log("BluetoothGatt.GATT_SUCCESS onServicesDiscovered received: " + status);
+                sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.notdiscovered');");
             }
         }
 
@@ -573,6 +589,7 @@ public class BluetoothStatus extends CordovaPlugin {
             log("onCharacteristicRead("+gatt+","+status+","+characteristic+","+status+")");                                                   //Record that the write has completed
             if (status == BluetoothGatt.GATT_SUCCESS) {                                 //See if the read was successful
               log("onCharacteristicRead =>  "+characteristic.getStringValue(0));
+              sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.read','"+characteristic.getStringValue(0)+"');");
             }
         }
 
@@ -580,18 +597,16 @@ public class BluetoothStatus extends CordovaPlugin {
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) { //A request to Write has completed
             log("onCharacteristicWrite("+gatt+","+characteristic+","+status+")");                                                   //Record that the write has completed
+            sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.write');");
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) { //Indication or notification was received
-            log("onCharacteristicWrite("+gatt+","+characteristic+")");                                                   //Record that the write has completed
+            log("onCharacteristicChanged("+gatt+","+characteristic+")");                                                   //Record that the write has completed
             log("onCharacteristicChanged =>  "+characteristic.getStringValue(0));
+            sendJS("javascript:cordova.plugins.BluetoothStatus.btevent('gatt.read','"+characteristic.getStringValue(0)+"');");
         }
         
-        @Override
-        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status){
-            log("onMtuChanged("+gatt+","+mtu+","+status+")");                                                   //Record that the write has completed
-        }
     };
         
 }
