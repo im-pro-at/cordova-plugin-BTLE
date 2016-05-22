@@ -134,6 +134,7 @@ public class BluetoothStatus extends CordovaPlugin {
                 log(args.getString(0));
                 BluetoothDevice device= bluetoothAdapter.getRemoteDevice(args.getString(1));
                 sgatt = device.connectGatt(this.cordova.getActivity().getApplicationContext(), false, mGattCallback);
+                callbackContext.success();
               }
               if(args.getString(0).equals("BLdiscoverServices"))
               {
@@ -141,6 +142,10 @@ public class BluetoothStatus extends CordovaPlugin {
                 if(sgatt!=null)
                 {
                   sgatt.discoverServices();                                      // Attempt to discover services after successful connection.
+                  callbackContext.success();
+                }
+                else{
+                  callbackContext.error("Not connected");                  
                 }
               }
               if(args.getString(0).equals("BLgetServices"))
@@ -215,8 +220,6 @@ public class BluetoothStatus extends CordovaPlugin {
                     public void run() {
                       try
                       {
-                        log(args.getString(0));
-
                         mDataMDLP.setValue(args.getString(1));                     //Set value of MLDP characteristic to send die roll information
 
                         if (sgatt.writeCharacteristic(mDataMDLP)) {                       //Request the BluetoothGatt to do the Write
@@ -243,16 +246,7 @@ public class BluetoothStatus extends CordovaPlugin {
                   callbackContext.error("Note open!");
                 }
                 
-              }
-                
-              if(args.getString(0).equals("BLreceive"))
-              {
-
-              }
-  
-                
-                
-                
+              }                
                 
               if(args.getString(0).equals("BLclose"))
               {
