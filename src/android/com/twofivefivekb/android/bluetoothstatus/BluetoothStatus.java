@@ -378,19 +378,24 @@ public class BluetoothStatus extends CordovaPlugin {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(socked!=null)
-        {
-          socked.close();
-          socked=null;
+        try{
+          if(socked!=null)
+          {
+            socked.close();
+            socked=null;
+          }
+          if(sgatt!=null)
+          {
+            sgatt.disconnect();
+            sgatt.close();
+            mDataMDLP=null;
+            sgatt=null;
+          }
         }
-        if(sgatt!=null)
+        catch(Exception e)
         {
-          sgatt.disconnect();
-          sgatt.close();
-          mDataMDLP=null;
-          sgatt=null;
+          log(e.toString());
         }
-
         mcordova.getActivity().unregisterReceiver(mReceiver);
     }
 
